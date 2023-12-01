@@ -2,10 +2,10 @@ use std::fs;
 use std::io;
 
 fn main() -> io::Result<()> {
-    let input = include_str!("../input/input_1.txt");
+    let input = include_str!("../input/input_2.txt");
     let output = solution(input);
 
-    fs::write("../solution/res_1.txt", output)?;
+    fs::write("../solution/res_2.txt", output)?;
 
     Ok(())
 }
@@ -20,7 +20,7 @@ mod tests {
 
     #[test]
     fn test_solution() {
-        let input = include_str!("../input/test_1.txt");
+        let input = include_str!("../input/test_2.txt");
         let output = solution(input);
 
         let expected_answer = "";

@@ -1,1 +1,1 @@
-# Advent of Code 2023 - Tempalte
+# Advent of Code 2023 - Template

@@ -5,7 +5,7 @@ fn main() -> io::Result<()> {
     let input = include_str!("../input/input_2.txt");
     let output = solution(input);
 
-    fs::write("../solution/res_2.txt", output)?;
+    fs::write("solution/res_2.txt", output)?;
 
     Ok(())
 }

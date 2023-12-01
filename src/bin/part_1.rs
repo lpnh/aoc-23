@@ -17,8 +17,10 @@ fn solution(input: &str) -> String {
         let first_digit = line.chars().find(|&c| c.is_ascii_digit()).unwrap();
         let last_digit = line.chars().rev().find(|&c| c.is_ascii_digit()).unwrap();
 
-        let calibration_value = format!("{}{}", first_digit, last_digit).parse::<i32>().unwrap();
-        
+        let calibration_value = format!("{}{}", first_digit, last_digit)
+            .parse::<i32>()
+            .unwrap();
+
         sum += calibration_value;
     }
 

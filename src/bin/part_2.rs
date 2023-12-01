@@ -2,13 +2,18 @@ use std::fs;
 use std::io;
 
 const SPELLED_WORDS: [(&str, char); 9] = [
-    ("one", '1'), ("two", '2'), ("three", '3'),
-    ("four", '4'), ("five", '5'), ("six", '6'),
-    ("seven", '7'), ("eight", '8'), ("nine", '9'),
+    ("one", '1'),
+    ("two", '2'),
+    ("three", '3'),
+    ("four", '4'),
+    ("five", '5'),
+    ("six", '6'),
+    ("seven", '7'),
+    ("eight", '8'),
+    ("nine", '9'),
 ];
 
 fn main() -> io::Result<()> {
-
     let input = include_str!("../input/input_2.txt");
     let output = solution(input);
 
@@ -18,59 +23,47 @@ fn main() -> io::Result<()> {
 }
 
 fn solution(input: &str) -> String {
-   let mut sum = 0;
+    input
+        .lines()
+        .map(|line| {
+            let first_digit = find_digit(line, Direction::Forward);
+            let last_digit = find_digit(line, Direction::Backward);
 
-    for line in input.lines() {
-        let first_digit = find_first_digit(line);
-        let last_digit = find_last_digit(line);
-
-        let calibration_value = format!("{}{}", first_digit, last_digit).parse::<i32>().unwrap();
-        
-        sum += calibration_value;
-    }
-
-    sum.to_string()
+            format!("{}{}", first_digit, last_digit)
+                .parse::<i32>()
+                .unwrap()
+        })
+        .sum::<i32>()
+        .to_string()
 }
 
-fn find_first_digit(input: &str) -> char {
-    let mut current_index = 0;
+enum Direction {
+    Forward,
+    Backward,
+}
 
-    while current_index < input.len() {
-        let c = input.chars().nth(current_index).unwrap();
+impl Direction {
+    fn iter<'a>(&self, input: &'a str) -> Box<dyn Iterator<Item = (usize, char)> + 'a> {
+        match self {
+            Direction::Forward => Box::new(input.char_indices()),
+            Direction::Backward => Box::new(input.char_indices().rev()),
+        }
+    }
+}
 
+fn find_digit(input: &str, direction: Direction) -> char {
+    let iter = direction.iter(input);
+
+    for (index, c) in iter {
         if c.is_ascii_digit() {
             return c;
         }
 
-        for (word, digit) in SPELLED_WORDS.iter() {
-            if input[current_index..].starts_with(word) {
-                return *digit;
+        for &(word, digit) in &SPELLED_WORDS {
+            if input[index..].starts_with(word) {
+                return digit;
             }
         }
-
-        current_index += 1;
-    }
-
-    unreachable!()
-}
-
-fn find_last_digit(input: &str) -> char {
-    let mut current_index = input.len() - 1;
-
-    while current_index > 0 {
-        let c = input.chars().nth(current_index).unwrap();
-
-        if c.is_ascii_digit() {
-            return c;
-        }
-
-        for (word, digit) in SPELLED_WORDS.iter() {
-            if input[current_index..].starts_with(word) {
-                return *digit;
-            }
-        }
-
-        current_index -= 1;
     }
 
     unreachable!()

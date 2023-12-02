@@ -1,5 +1,6 @@
-use std::fs;
 use std::io;
+
+use crate::advent::*;
 
 const SPELLED_WORDS: [(&str, char); 9] = [
     ("one", '1'),
@@ -13,11 +14,11 @@ const SPELLED_WORDS: [(&str, char); 9] = [
     ("nine", '9'),
 ];
 
-fn main() -> io::Result<()> {
-    let input = include_str!("../input/input.txt");
+pub fn update(advent: &mut Advent) -> Result<(), io::Error> {
+    let input = include_str!("./io/puzzle.txt");
     let output = solution(input);
 
-    fs::write("solution/res_2.txt", output)?;
+    let _ = advent.solve(Day::Day01, Part::Part2, Some(output));
 
     Ok(())
 }
@@ -74,8 +75,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_solution() {
-        let input = include_str!("../input/test_2.txt");
+    fn solve() {
+        let input = include_str!("./io/test_2.txt");
         let output = solution(input);
 
         let expected_answer = "281";

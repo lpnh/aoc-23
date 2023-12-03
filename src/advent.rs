@@ -6,15 +6,10 @@ use std::{
 };
 use std::{error::Error, fs, path::Path};
 
-pub enum Part {
-    Part1,
-    Part2,
-}
-
 #[derive(Serialize, Deserialize, Debug, Default, PartialEq, Eq, Clone)]
-pub struct Solution {
-    pub part_1: Option<String>,
-    pub part_2: Option<String>,
+struct Solution {
+    part_1: Option<String>,
+    part_2: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone)]
@@ -51,6 +46,13 @@ pub struct Advent {
     advent: HashMap<Day, Solution>,
 }
 
+pub struct SantaPackage {
+    pub day: Day,
+    pub puzzle_input: String,
+    pub solution_part_1: fn(&str) -> Result<String, Box<dyn Error>>,
+    pub solution_part_2: fn(&str) -> Result<String, Box<dyn Error>>,
+}
+
 impl Advent {
     const SOLUTION_PATH: &'static str = "solution.yaml";
 
@@ -66,15 +68,16 @@ impl Advent {
         }
     }
 
-    pub fn solve(&mut self, day: Day, part: Part, solution: Option<String>) -> Result<(), Box<dyn Error>> {
-        let entry = self.advent.entry(day).or_default();
+    pub fn get_package(&mut self, package: SantaPackage) -> Result<(), Box<dyn Error>> {
+        let entry = self.advent.entry(package.day).or_default();
 
-        match part {
-            Part::Part1 => entry.part_1 = solution,
-            Part::Part2 => entry.part_2 = solution,
-        }
+        let solution_part_1 = (package.solution_part_1)(&package.puzzle_input)?;
+        let solution_part_2 = (package.solution_part_2)(&package.puzzle_input)?;
+        entry.part_1 = Some(solution_part_1);
+        entry.part_2 = Some(solution_part_2);
 
         self.write_solution()?;
+
         Ok(())
     }
 
@@ -93,7 +96,11 @@ impl Display for Day {
 
 impl Display for Solution {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "Solution:\nPart_1: {:?}\nPart_2: {:?}", self.part_1, self.part_2)
+        write!(
+            f,
+            "Solution:\nPart_1: {:?}\nPart_2: {:?}",
+            self.part_1, self.part_2
+        )
     }
 }
 

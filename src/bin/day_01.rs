@@ -1,3 +1,151 @@
+#![allow(clippy::items_after_test_module)] // you can ignore this
+
+use aoc_23::*; // you can ignore this too
+
+use std::error::Error;
+use std::io;
+
+const CURRENT_DAY: Day = Day::Day01; // update this with the current day
+
+fn solve_part_1(input: &str) -> Result<String, Box<dyn Error>> {
+    let mut sum = 0;
+
+    for line in input.lines() {
+        let first_digit = line.chars().find(|&c| c.is_ascii_digit()).ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidData, "No digit found in the line")
+        })?;
+        let last_digit = line
+            .chars()
+            .rev()
+            .find(|&c| c.is_ascii_digit())
+            .ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidData, "No digit found in the line")
+            })?;
+
+        let calibration_value = format!("{}{}", first_digit, last_digit)
+            .parse::<i32>()
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+
+        sum += calibration_value;
+    }
+
+    Ok(sum.to_string())
+}
+
+fn solve_part_2(input: &str) -> Result<String, Box<dyn Error>> {
+    let res = input
+        .lines()
+        .map(|line| {
+            let first_digit = find_digit(line, Direction::Forward);
+            let last_digit = find_digit(line, Direction::Backward);
+
+            format!("{}{}", first_digit, last_digit)
+                .parse::<i32>()
+                .unwrap()
+        })
+        .sum::<i32>()
+        .to_string();
+
+    Ok(res)
+}
+
+enum Direction {
+    Forward,
+    Backward,
+}
+
+impl Direction {
+    fn iter<'a>(&self, input: &'a str) -> Box<dyn Iterator<Item = (usize, char)> + 'a> {
+        match self {
+            Direction::Forward => Box::new(input.char_indices()),
+            Direction::Backward => Box::new(input.char_indices().rev()),
+        }
+    }
+}
+
+fn find_digit(input: &str, direction: Direction) -> char {
+    let iter = direction.iter(input);
+
+    for (index, c) in iter {
+        if c.is_ascii_digit() {
+            return c;
+        }
+
+        for &(word, digit) in &SPELLED_WORDS {
+            if input[index..].starts_with(word) {
+                return digit;
+            }
+        }
+    }
+
+    unreachable!()
+}
+
+const SPELLED_WORDS: [(&str, char); 9] = [
+    ("one", '1'),
+    ("two", '2'),
+    ("three", '3'),
+    ("four", '4'),
+    ("five", '5'),
+    ("six", '6'),
+    ("seven", '7'),
+    ("eight", '8'),
+    ("nine", '9'),
+];
+
+// Optional: use this to test your solutions.
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn check_part_1_solution() {
+        const EXAMPLE_1: &str = r#"
+            1abc2
+            pqr3stu8vwx
+            a1b2c3d4e5f
+            treb7uchet
+        "#;
+
+        const EXPECTED_ANSWER_1: &str = "142"; // update this with the expected answer
+
+        // that's it! run `cargo test --bin <day>` and let the elves do the rest
+
+        elf_test_this!(EXAMPLE_1, solve_part_1, EXPECTED_ANSWER_1);
+    }
+
+    #[test]
+    fn check_part_2_solution() {
+        const EXAMPLE_2: &str = r#"
+            two1nine
+            eightwothree
+            abcone2threexyz
+            xtwone3four
+            4nineeightseven2
+            zoneight234
+            7pqrstsixteen
+        "#;
+
+        const EXPECTED_ANSWER_2: &str = "281"; // update this with the expected answer
+
+        // that's it! run `cargo test --bin <day>` and let the elves do the rest
+
+        elf_test_this!(EXAMPLE_2, solve_part_2, EXPECTED_ANSWER_2);
+    }
+}
+
+// simply run `cargo run --bin <day>` and check the answer inside `solution.yaml`
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut advent = Advent::ho_ho_ho()?;
+
+    advent.get_package(elf_magic!())?;
+
+    Ok(())
+}
+
+// Puzzle Input
+const PUZZLE_INPUT: &str = r#"
 29lzrxseven
 9nnqljsixkzphvtmtr
 five73kskpfgbkcltwoccvf
@@ -998,3 +1146,4 @@ one5seven
 kfjzhdtgkjtqthree7pvmxs
 7two5one8
 3eighteightllkbxkbs9zgznxtj8lfflcst
+"#;

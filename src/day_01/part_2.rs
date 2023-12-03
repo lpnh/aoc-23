@@ -1,4 +1,4 @@
-use std::io;
+use std::error::Error;
 
 use crate::advent::*;
 
@@ -14,17 +14,19 @@ const SPELLED_WORDS: [(&str, char); 9] = [
     ("nine", '9'),
 ];
 
-pub fn update(advent: &mut Advent) -> Result<(), io::Error> {
-    let input = include_str!("./io/puzzle.txt");
-    let output = solution(input);
+pub fn update(advent: &mut Advent) -> Result<(), Box<dyn Error>> {
+    let input = include_str!("./input/puzzle.txt");
+    let output = solution(input)?;
 
-    let _ = advent.solve(Day::Day01, Part::Part2, Some(output));
+    let day = Day::Day01; // update this with the correct day
+
+    let _ = advent.solve(day, Part::Part2, Some(output));
 
     Ok(())
 }
 
-fn solution(input: &str) -> String {
-    input
+fn solution(input: &str) -> Result<String, Box<dyn Error>> {
+    let res = input
         .lines()
         .map(|line| {
             let first_digit = find_digit(line, Direction::Forward);
@@ -35,7 +37,9 @@ fn solution(input: &str) -> String {
                 .unwrap()
         })
         .sum::<i32>()
-        .to_string()
+        .to_string();
+
+    Ok(res)
 }
 
 enum Direction {
@@ -75,11 +79,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn solve() {
-        let input = include_str!("./io/test_2.txt");
-        let output = solution(input);
+    fn check_solution() {
+        let input = include_str!("./input/test_2.txt");
+        let output = solution(input).unwrap();
 
-        let expected_answer = "281";
+        let expected_answer = "281"; // update this with the expected answer from the example
 
         assert_eq!(output, expected_answer);
     }

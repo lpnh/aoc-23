@@ -3,6 +3,10 @@ use std::error::Error;
 
 use aoc_23::*;
 
+// you can ignore this
+// just remember to add the new day to the match statement below
+// then, you can run the solution for that day with `cargo run` + the day name
+// e.g., `cargo run day01`, `cargo run day02`, etc.
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = Command::new("Advent of Code")
         .version("1.0")

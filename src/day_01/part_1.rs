@@ -3,15 +3,17 @@ use std::{error::Error, io};
 use crate::advent::*;
 
 pub fn update(advent: &mut Advent) -> Result<(), Box<dyn Error>> {
-    let input = include_str!("./io/puzzle.txt");
+    let input = include_str!("./input/puzzle.txt");
     let output = solution(input)?;
 
-    let _ = advent.solve(Day::Day01, Part::Part1, Some(output));
+    let day = Day::Day01; // update this with the correct day
+
+    let _ = advent.solve(day, Part::Part1, Some(output));
 
     Ok(())
 }
 
-fn solution(input: &str) -> Result<String, io::Error> {
+fn solution(input: &str) -> Result<String, Box<dyn Error>> {
     let mut sum = 0;
 
     for line in input.lines() {
@@ -41,11 +43,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn solve() {
-        let input = include_str!("./io/test_1.txt");
+    fn check_solution() {
+        let input = include_str!("./input/test_1.txt");
         let output = solution(input).unwrap();
 
-        let expected_answer = "142";
+        let expected_answer = "142"; // update this with the expected answer from the example
 
         assert_eq!(output, expected_answer);
     }

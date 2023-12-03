@@ -1,30 +1,19 @@
-#![allow(clippy::items_after_test_module)] // you can ignore this
+#![allow(clippy::items_after_test_module)]
 
-use aoc_23::*; // you can ignore this too
+use aoc_23::*;
 
-use std::error::Error;
-use std::io;
+use anyhow::{Error, Result};
 
-const CURRENT_DAY: Day = Day::Day01; // update this with the current day
+const CURRENT_DAY: Day = Day::Day01;
 
-fn solve_part_1(input: &str) -> Result<String, Box<dyn Error>> {
+fn solve_part_1(input: &str) -> Result<String, Error> {
     let mut sum = 0;
 
     for line in input.lines() {
-        let first_digit = line.chars().find(|&c| c.is_ascii_digit()).ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidData, "No digit found in the line")
-        })?;
-        let last_digit = line
-            .chars()
-            .rev()
-            .find(|&c| c.is_ascii_digit())
-            .ok_or_else(|| {
-                io::Error::new(io::ErrorKind::InvalidData, "No digit found in the line")
-            })?;
+        let first_digit = line.chars().find(|&c| c.is_ascii_digit()).unwrap();
+        let last_digit = line.chars().rev().find(|&c| c.is_ascii_digit()).unwrap();
 
-        let calibration_value = format!("{}{}", first_digit, last_digit)
-            .parse::<i32>()
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        let calibration_value = format!("{}{}", first_digit, last_digit).parse::<i32>()?;
 
         sum += calibration_value;
     }
@@ -32,7 +21,7 @@ fn solve_part_1(input: &str) -> Result<String, Box<dyn Error>> {
     Ok(sum.to_string())
 }
 
-fn solve_part_2(input: &str) -> Result<String, Box<dyn Error>> {
+fn solve_part_2(input: &str) -> Result<String, Error> {
     let res = input
         .lines()
         .map(|line| {
@@ -93,7 +82,6 @@ const SPELLED_WORDS: [(&str, char); 9] = [
     ("nine", '9'),
 ];
 
-// Optional: use this to test your solutions.
 #[cfg(test)]
 mod tests {
 
@@ -108,9 +96,7 @@ mod tests {
             treb7uchet
         "#;
 
-        const EXPECTED_ANSWER_1: &str = "142"; // update this with the expected answer
-
-        // that's it! run `cargo test --bin <day>` and let the elves do the rest
+        const EXPECTED_ANSWER_1: &str = "142";
 
         elf_test_this!(EXAMPLE_1, solve_part_1, EXPECTED_ANSWER_1);
     }
@@ -127,16 +113,13 @@ mod tests {
             7pqrstsixteen
         "#;
 
-        const EXPECTED_ANSWER_2: &str = "281"; // update this with the expected answer
-
-        // that's it! run `cargo test --bin <day>` and let the elves do the rest
+        const EXPECTED_ANSWER_2: &str = "281";
 
         elf_test_this!(EXAMPLE_2, solve_part_2, EXPECTED_ANSWER_2);
     }
 }
 
-// simply run `cargo run --bin <day>` and check the answer inside `solution.yaml`
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<(), Error> {
     let mut advent = Advent::ho_ho_ho()?;
 
     advent.get_package(elf_magic!())?;
@@ -144,7 +127,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// Puzzle Input
 const PUZZLE_INPUT: &str = r#"
 29lzrxseven
 9nnqljsixkzphvtmtr

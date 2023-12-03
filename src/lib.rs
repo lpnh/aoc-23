@@ -1,7 +1,44 @@
+//! Advent of Code 2023
+//!
+//! Let ~~rust~~ elves do the work for you!
+//!
+//! 🎄 Happy Coding! 🎄
 mod advent;
 pub use advent::{Advent, Day, SantaPackage};
 
-// custom function to format multiline strings
+/// ✨ macro magic acting as a placeholder for your awesome solution ✨
+#[macro_export]
+macro_rules! good_luck {
+    ($input:ident) => {{
+        let _ = &$input;
+        Ok("".to_string())
+    }};
+}
+
+/// ✨ macro magic to test your solutions ✨
+#[macro_export]
+macro_rules! elf_test_this {
+    ($input:expr, $solver:expr, $expected:expr) => {
+        let input_example = _fmt($input);
+        let solution = $solver(&input_example).unwrap();
+        assert_eq!(solution, $expected);
+    };
+}
+
+/// ✨ macro magic to generate your `SantaPackage` ✨
+#[macro_export]
+macro_rules! elf_magic {
+    () => {
+        SantaPackage {
+            day: CURRENT_DAY,
+            puzzle_input: _fmt(PUZZLE_INPUT),
+            solution_part_1: solve_part_1,
+            solution_part_2: solve_part_2,
+        }
+    };
+}
+
+/// custom function to format multiline strings
 pub fn _fmt(raw_str: &str) -> String {
     let lines: Vec<&str> = raw_str
         .lines()
@@ -19,27 +56,4 @@ pub fn _fmt(raw_str: &str) -> String {
         .map(|line| line.get(min_indent..).unwrap_or(line))
         .collect::<Vec<&str>>()
         .join("\n")
-}
-
-// macro magic to test solutions
-#[macro_export]
-macro_rules! elf_test_this {
-    ($input:expr, $solver:expr, $expected:expr) => {
-        let input_example = _fmt($input);
-        let solution = $solver(&input_example).unwrap();
-        assert_eq!(solution, $expected);
-    };
-}
-
-// macro magic to generate the SantaPackage struct
-#[macro_export]
-macro_rules! elf_magic {
-    () => {
-        SantaPackage {
-            day: CURRENT_DAY,
-            puzzle_input: _fmt(PUZZLE_INPUT),
-            solution_part_1: solve_part_1,
-            solution_part_2: solve_part_2,
-        }
-    };
 }

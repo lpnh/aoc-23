@@ -54,7 +54,46 @@ fn solve_part_1(input: &str) -> Result<String, Error> {
 }
 
 fn solve_part_2(input: &str) -> Result<String, Error> {
-    good_luck!(input)
+    let mut games_sum = 0;
+
+    for game in input.lines() {
+        let mut red_cubes = 0;
+        let mut green_cubes = 0;
+        let mut blue_cubes = 0;
+
+        let colon_position = game.find(':').unwrap();
+        let rounds = game[(colon_position + 1)..].split(';').collect::<Vec<_>>();
+
+        for round in rounds {
+            let cubes = round.split(',').collect::<Vec<_>>();
+
+            for cube in cubes {
+                let cube = cube.trim();
+
+                if cube.ends_with("red") {
+                    let current_red = cube.split(' ').collect::<Vec<_>>()[0].parse::<u32>()?;
+                    if current_red > red_cubes {
+                        red_cubes = current_red;
+                    }
+                } else if cube.ends_with("green") {
+                    let current_green = cube.split(' ').collect::<Vec<_>>()[0].parse::<u32>()?;
+                    if current_green > green_cubes {
+                        green_cubes = current_green;
+                    }
+                } else if cube.ends_with("blue") {
+                    let current_blue = cube.split(' ').collect::<Vec<_>>()[0].parse::<u32>()?;
+                    if current_blue > blue_cubes {
+                        blue_cubes = current_blue;
+                    }
+                }
+
+            }
+        }
+
+        games_sum += red_cubes * green_cubes * blue_cubes;
+    }
+    
+    Ok(games_sum.to_string())
 }
 
 fn main() -> Result<(), Error> {

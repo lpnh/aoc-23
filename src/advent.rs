@@ -2,7 +2,7 @@ use anyhow::{Error, Result};
 use std::fmt::{self, Display, Formatter};
 
 /// The Days of Advent
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Day {
     /// ⚠️ Update this accordingly ⚠️
     Day00,
@@ -86,6 +86,10 @@ impl Advent {
     }
 
     fn get_package(package: SantaPackage) -> Result<Advent, Error> {
+        if package.day == Day::Day00 {
+            println!("\nDon't forget to update the Day and the path!\n");
+        }
+
         let advent = Advent {
             day: package.day,
             answer_part_1: (package.solution_part_1)(&package.puzzle_input)?,

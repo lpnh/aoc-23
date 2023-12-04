@@ -15,30 +15,40 @@ macro_rules! good_luck {
     }};
 }
 
-/// ✨ macro magic to test your solutions ✨
-#[macro_export]
-macro_rules! elf_test_this {
-    ($input:expr, $solver:expr, $expected:expr) => {
-        let input_example = _fmt($input);
-        let solution = $solver(&input_example).unwrap();
-        assert_eq!(solution, $expected);
-    };
-}
-
 /// ✨ macro magic to generate your `SantaPackage` ✨
 #[macro_export]
 macro_rules! elf_magic {
     () => {
         SantaPackage {
             day: CURRENT_DAY,
-            puzzle_input: _fmt(PUZZLE_INPUT),
+            puzzle_input: PUZZLE_INPUT.to_string(),
             solution_part_1: solve_part_1,
             solution_part_2: solve_part_2,
         }
     };
 }
 
-/// custom function to format multiline strings
+/// ✨ macro magic to test your solution for Part One ✨
+#[macro_export]
+macro_rules! test_part_one {
+    () => {
+        let input_example = _fmt(EXAMPLE_1);
+        let solution = solve_part_1(&input_example).unwrap();
+        assert_eq!(solution, EXPECTED_ANSWER_1);
+    };
+}
+
+/// ✨ macro magic to test your solution for Part Two ✨
+#[macro_export]
+macro_rules! test_part_two {
+    () => {
+        let input_example = _fmt(EXAMPLE_2);
+        let solution = solve_part_2(&input_example).unwrap();
+        assert_eq!(solution, EXPECTED_ANSWER_2);
+    };
+}
+
+/// A custom function to format multiline strings
 pub fn _fmt(raw_str: &str) -> String {
     let lines: Vec<&str> = raw_str
         .lines()

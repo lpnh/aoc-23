@@ -1,21 +1,11 @@
 use anyhow::{Error, Result};
-use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    default::Default,
-    fmt::{self, Display, Formatter},
-};
-use std::{fs, path::Path};
-
-#[derive(Serialize, Deserialize, Debug, Default, PartialEq, Eq, Clone)]
-struct Solution {
-    part_1: Option<String>,
-    part_2: Option<String>,
-}
+use std::fmt::{self, Display, Formatter};
 
 /// The Days of Advent
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug)]
 pub enum Day {
+    /// ⚠️ Update this accordingly ⚠️
+    Day00,
     /// 24 days until Christmas 🎄
     Day01,
     /// 23 days until Christmas 🎄
@@ -68,12 +58,6 @@ pub enum Day {
     Day25,
 }
 
-/// Your Advent Calendar 📆
-#[derive(Serialize, Deserialize, Debug, Default, PartialEq, Eq, Clone)]
-pub struct Advent {
-    advent: HashMap<Day, Solution>,
-}
-
 /// Your SantaPackage 🎁
 pub struct SantaPackage {
     pub day: Day,
@@ -82,65 +66,50 @@ pub struct SantaPackage {
     pub solution_part_2: fn(&str) -> Result<String, Error>,
 }
 
+/// Your Advent Calendar 📆
+pub struct Advent {
+    pub day: Day,
+    pub answer_part_1: String,
+    pub answer_part_2: String,
+}
+
 impl Advent {
-    const SOLUTION_PATH: &'static str = "solution.yaml";
-
     /// Happy Holidays!
-    pub fn ho_ho_ho() -> Result<Self, Error> {
-        if Path::new(Self::SOLUTION_PATH).exists() {
-            let contents = fs::read_to_string(Self::SOLUTION_PATH)?;
-            let advent = serde_yaml::from_str(&contents)?;
-            Ok(advent)
-        } else {
-            Ok(Self {
-                advent: HashMap::new(),
-            })
-        }
-    }
+    ///
+    /// 🦌🦌🦌🦌🦌🦌🦌🦌🦌 🎅
+    pub fn ho_ho_ho(package: SantaPackage) -> Result<(), Error> {
+        let advent: Advent = Self::get_package(package)?;
 
-    /// Your SantaPackage is here!
-    pub fn get_package(&mut self, package: SantaPackage) -> Result<(), Error> {
-        let entry = self.advent.entry(package.day).or_default();
-
-        let solution_part_1 = (package.solution_part_1)(&package.puzzle_input)?;
-        let solution_part_2 = (package.solution_part_2)(&package.puzzle_input)?;
-        entry.part_1 = Some(solution_part_1);
-        entry.part_2 = Some(solution_part_2);
-
-        self.write_solution()?;
+        println!("{}", advent);
 
         Ok(())
     }
 
-    fn write_solution(&self) -> Result<(), Error> {
-        let advent_yaml = serde_yaml::to_string(&self)?;
-        fs::write(Self::SOLUTION_PATH, advent_yaml)?;
-        Ok(())
-    }
-}
+    fn get_package(package: SantaPackage) -> Result<Advent, Error> {
+        let advent = Advent {
+            day: package.day,
+            answer_part_1: (package.solution_part_1)(&package.puzzle_input)?,
+            answer_part_2: (package.solution_part_2)(&package.puzzle_input)?,
+        };
 
-impl Display for Day {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl Display for Solution {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Solution:\nPart_1: {:?}\nPart_2: {:?}",
-            self.part_1, self.part_2
-        )
+        Ok(advent)
     }
 }
 
 impl Display for Advent {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for (day, solution) in &self.advent {
-            writeln!(f, "{}\n{}", day, solution)?;
-        }
-
-        Ok(())
+        let star_1 = match self.answer_part_1.as_str() {
+            "" => "",
+            _ => "⭐",
+        };
+        let star_2 = match self.answer_part_2.as_str() {
+            "" => "",
+            _ => "⭐",
+        };
+        write!(
+            f,
+            "\n{:?} {}{}\n---\nPart One: {}\nPart Two: {}\n",
+            self.day, star_1, star_2, self.answer_part_1, self.answer_part_2
+        )
     }
 }

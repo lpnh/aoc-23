@@ -39,17 +39,16 @@ fn solve_part_1(input: &str) -> Result<String, Error> {
                         blue_cubes = current_blue;
                     }
                 }
-
             }
         }
 
         if red_cubes <= 12 && green_cubes <= 13 && blue_cubes <= 14 {
             games_sum += game_id;
-        } 
+        }
 
         game_id += 1;
     }
-    
+
     Ok(games_sum.to_string())
 }
 
@@ -86,13 +85,12 @@ fn solve_part_2(input: &str) -> Result<String, Error> {
                         blue_cubes = current_blue;
                     }
                 }
-
             }
         }
 
         games_sum += red_cubes * green_cubes * blue_cubes;
     }
-    
+
     Ok(games_sum.to_string())
 }
 

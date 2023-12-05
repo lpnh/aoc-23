@@ -6,6 +6,9 @@
 mod advent;
 pub use advent::{Advent, Day, SantaPackage};
 
+mod algorithms;
+pub use algorithms::*;
+
 /// ✨ macro magic acting as a placeholder for your awesome solution ✨
 #[macro_export]
 macro_rules! good_luck {

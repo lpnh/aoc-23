@@ -35,17 +35,30 @@ fn solve_part_1(input: &str) -> Result<String, Error> {
     Ok(sum.to_string())
 }
 
-fn dfs(grid: &[Vec<char>], vertex: (usize, usize), visited: &mut HashSet<(usize, usize)>, number: &mut i32, positions: &mut HashSet<(usize, usize)>, include_number: &mut bool) {
+fn dfs(
+    grid: &[Vec<char>],
+    vertex: (usize, usize),
+    visited: &mut HashSet<(usize, usize)>,
+    number: &mut i32,
+    positions: &mut HashSet<(usize, usize)>,
+    include_number: &mut bool,
+) {
     if visited.insert(vertex) {
         if let Some(digit) = grid[vertex.0][vertex.1].to_digit(10) {
             *number = *number * 10 + digit as i32;
             positions.insert(vertex);
             for dx in -1..=1 {
                 for dy in -1..=1 {
-                    if dx == 0 && dy == 0 { continue; }
+                    if dx == 0 && dy == 0 {
+                        continue;
+                    }
                     let new_x = vertex.0 as i32 + dx;
                     let new_y = vertex.1 as i32 + dy;
-                    if new_x >= 0 && (new_x as usize) < grid.len() && new_y >= 0 && (new_y as usize) < grid[0].len() {
+                    if new_x >= 0
+                        && (new_x as usize) < grid.len()
+                        && new_y >= 0
+                        && (new_y as usize) < grid[0].len()
+                    {
                         let neighbor = (new_x as usize, new_y as usize);
                         let neighbor_cell = grid[neighbor.0][neighbor.1];
                         if neighbor_cell.is_ascii_digit() {
@@ -83,7 +96,14 @@ fn solve_part_2(input: &str) -> Result<String, Error> {
                 let mut number = 0;
                 let mut positions = HashSet::new();
                 let mut include_number = false;
-                dfs(&grid, (x, y), &mut visited, &mut number, &mut positions, &mut include_number);
+                dfs(
+                    &grid,
+                    (x, y),
+                    &mut visited,
+                    &mut number,
+                    &mut positions,
+                    &mut include_number,
+                );
                 if include_number {
                     part_numbers.push((number, positions));
                 }
@@ -95,11 +115,12 @@ fn solve_part_2(input: &str) -> Result<String, Error> {
     for (x, row) in grid.iter().enumerate() {
         for (y, &cell) in row.iter().enumerate() {
             if cell == '*' {
-                let adj_part_numbers: Vec<i32> = part_numbers.iter()
+                let adj_part_numbers: Vec<i32> = part_numbers
+                    .iter()
                     .filter(|&(_, positions)| is_adjacent(positions, x, y))
                     .map(|&(num, _)| num)
                     .collect();
-                
+
                 if adj_part_numbers.len() == 2 {
                     total_gear_ratio += adj_part_numbers[0] * adj_part_numbers[1];
                 }

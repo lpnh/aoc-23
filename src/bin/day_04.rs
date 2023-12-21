@@ -1,5 +1,6 @@
 use aoc_23::*;
 
+use std::collections::HashMap;
 use anyhow::{Error, Result, anyhow};
 
 const CURRENT_DAY: Day = Day::Day04;
@@ -9,7 +10,7 @@ fn solve_part_1(input: &str) -> Result<String, Error> {
     let mut sum = 0;
 
     for line in input.lines() {
-        let mut my_winning_numbers = 0;
+        let mut elf_winning_numbers = 0;
 
         let start = line.find(':').ok_or(anyhow!("':' not found"))? + 1;
         let end = line.find('|').ok_or(anyhow!("'|' not found"))?;
@@ -22,11 +23,11 @@ fn solve_part_1(input: &str) -> Result<String, Error> {
 
         for number in elf_numbers_array {
             if winning_numbers_array.contains(&number) {
-                my_winning_numbers += 1;
+                elf_winning_numbers += 1;
             }
         }
 
-        sum += match my_winning_numbers {
+        sum += match elf_winning_numbers {
             1 => 1,
             n if n > 1 => 2_i32.pow(n - 1),
             _ => 0,
@@ -37,7 +38,40 @@ fn solve_part_1(input: &str) -> Result<String, Error> {
 }
 
 fn solve_part_2(input: &str) -> Result<String, Error> {
-    good_luck!(input)
+    let mut card_count = vec![1; input.lines().count()];
+    let mut current_card = 1;
+
+    for line in input.lines() {
+        let mut elf_winning_numbers = 0;
+
+        let start = line.find(':').ok_or(anyhow!("':' not found"))? + 1;
+        let end = line.find('|').ok_or(anyhow!("'|' not found"))?;
+
+        let winning_numbers = &line[start..end];
+        let winning_numbers_array = get_array(winning_numbers)?;        
+
+        let elf_numbers = &line[(end + 1)..];
+        let elf_numbers_array = get_array(elf_numbers)?;
+
+        for number in elf_numbers_array {
+            if winning_numbers_array.contains(&number) {
+                elf_winning_numbers += 1;
+            }
+        }
+
+        let current_card_amount = card_count[current_card - 1];
+
+        for _each_card in 0..current_card_amount {
+            for n in current_card..=(current_card + elf_winning_numbers - 1) {
+                card_count[n] += 1
+            }
+        }
+
+        current_card += 1;
+
+    }
+
+    Ok(card_count.into_iter().sum::<i32>().to_string())
 }
 
 fn get_array(numbers: &str) -> Result<Vec<i32>, Error> {

@@ -1,83 +1,60 @@
 use aoc_23::*;
 
-use std::collections::HashMap;
+use std::collections::HashSet;
 use anyhow::{Error, Result, anyhow};
 
 const CURRENT_DAY: Day = Day::Day04;
 const PUZZLE_INPUT: &str = include_str!("../../puzzle_input/day_04.txt");
 
 fn solve_part_1(input: &str) -> Result<String, Error> {
-    let mut sum = 0;
-
-    for line in input.lines() {
-        let mut elf_winning_numbers = 0;
-
-        let start = line.find(':').ok_or(anyhow!("':' not found"))? + 1;
-        let end = line.find('|').ok_or(anyhow!("'|' not found"))?;
-
-        let winning_numbers = &line[start..end];
-        let winning_numbers_array = get_array(winning_numbers)?;        
-
-        let elf_numbers = &line[(end + 1)..];
-        let elf_numbers_array = get_array(elf_numbers)?;
-
-        for number in elf_numbers_array {
-            if winning_numbers_array.contains(&number) {
-                elf_winning_numbers += 1;
+    let total: u32 = input.lines()
+        .map(|line| {
+            let (card_winning_numbers, elf_numbers) = parse_line(line).unwrap();
+            let elf_winning_numbers = elf_numbers.intersection(&card_winning_numbers).count() as u32;
+            match elf_winning_numbers {
+                1 => 1,
+                n if n > 1 => 2_u32.pow(n - 1),
+                _ => 0,
             }
-        }
+        })
+        .sum();
 
-        sum += match elf_winning_numbers {
-            1 => 1,
-            n if n > 1 => 2_i32.pow(n - 1),
-            _ => 0,
-        };
-    }
-
-    Ok(sum.to_string())
+    Ok(total.to_string())
 }
 
 fn solve_part_2(input: &str) -> Result<String, Error> {
-    let mut card_count = vec![1; input.lines().count()];
-    let mut current_card = 1;
+    let mut scratchcards_pile = vec![1; input.lines().count()];
 
-    for line in input.lines() {
-        let mut elf_winning_numbers = 0;
+    for (index, line) in input.lines().enumerate() {
+        let (card_winning_numbers, elf_numbers) = parse_line(line)?;
+        let elf_winning_numbers = elf_numbers.intersection(&card_winning_numbers).count();
 
-        let start = line.find(':').ok_or(anyhow!("':' not found"))? + 1;
-        let end = line.find('|').ok_or(anyhow!("'|' not found"))?;
+        let current_card_amount = scratchcards_pile[index];
 
-        let winning_numbers = &line[start..end];
-        let winning_numbers_array = get_array(winning_numbers)?;        
-
-        let elf_numbers = &line[(end + 1)..];
-        let elf_numbers_array = get_array(elf_numbers)?;
-
-        for number in elf_numbers_array {
-            if winning_numbers_array.contains(&number) {
-                elf_winning_numbers += 1;
-            }
-        }
-
-        let current_card_amount = card_count[current_card - 1];
-
-        for _each_card in 0..current_card_amount {
-            for n in current_card..=(current_card + elf_winning_numbers - 1) {
-                card_count[n] += 1
-            }
-        }
-
-        current_card += 1;
-
+        scratchcards_pile.iter_mut()
+            .skip(index + 1)
+            .take(elf_winning_numbers)
+            .for_each(|next_card| *next_card += current_card_amount);
     }
 
-    Ok(card_count.into_iter().sum::<i32>().to_string())
+    let scratchcards_sum = scratchcards_pile.into_iter().sum::<i32>();
+
+    Ok(scratchcards_sum.to_string())
 }
 
-fn get_array(numbers: &str) -> Result<Vec<i32>, Error> {
+fn parse_line(line: &str) -> Result<(HashSet<i32>, HashSet<i32>), Error> {
+    let (winning_part, elf_part) = line.split_once('|').ok_or(anyhow!("'|' not found"))?;
+    let card_winning_numbers = winning_part.split_once(':').ok_or(anyhow!("':' not found"))?.1;
+    let card_winning_set = get_set(card_winning_numbers)?;
+    let elf_set = get_set(elf_part)?;
+
+    Ok((card_winning_set, elf_set))
+}
+
+fn get_set(numbers: &str) -> Result<HashSet<i32>, Error> {
     numbers.split_whitespace()
         .map(|s| s.parse::<i32>())
-        .collect::<Result<Vec<i32>, _>>()
+        .collect::<Result<HashSet<i32>, _>>()
         .map_err(|e| anyhow!("Error parsing numbers: {}", e))
 }
 

@@ -1,16 +1,18 @@
 use aoc_23::*;
 
+use anyhow::{anyhow, Error, Result};
 use std::collections::HashSet;
-use anyhow::{Error, Result, anyhow};
 
 const CURRENT_DAY: Day = Day::Day04;
 const PUZZLE_INPUT: &str = include_str!("../../puzzle_input/day_04.txt");
 
 fn solve_part_1(input: &str) -> Result<String, Error> {
-    let total: u32 = input.lines()
+    let total: u32 = input
+        .lines()
         .map(|line| {
             let (card_winning_numbers, elf_numbers) = parse_line(line).unwrap();
-            let elf_winning_numbers = elf_numbers.intersection(&card_winning_numbers).count() as u32;
+            let elf_winning_numbers =
+                elf_numbers.intersection(&card_winning_numbers).count() as u32;
             match elf_winning_numbers {
                 1 => 1,
                 n if n > 1 => 2_u32.pow(n - 1),
@@ -31,7 +33,8 @@ fn solve_part_2(input: &str) -> Result<String, Error> {
 
         let current_card_amount = scratchcards_pile[index];
 
-        scratchcards_pile.iter_mut()
+        scratchcards_pile
+            .iter_mut()
             .skip(index + 1)
             .take(elf_winning_numbers)
             .for_each(|next_card| *next_card += current_card_amount);
@@ -44,7 +47,10 @@ fn solve_part_2(input: &str) -> Result<String, Error> {
 
 fn parse_line(line: &str) -> Result<(HashSet<i32>, HashSet<i32>), Error> {
     let (winning_part, elf_part) = line.split_once('|').ok_or(anyhow!("'|' not found"))?;
-    let card_winning_numbers = winning_part.split_once(':').ok_or(anyhow!("':' not found"))?.1;
+    let card_winning_numbers = winning_part
+        .split_once(':')
+        .ok_or(anyhow!("':' not found"))?
+        .1;
     let card_winning_set = get_set(card_winning_numbers)?;
     let elf_set = get_set(elf_part)?;
 
@@ -52,7 +58,8 @@ fn parse_line(line: &str) -> Result<(HashSet<i32>, HashSet<i32>), Error> {
 }
 
 fn get_set(numbers: &str) -> Result<HashSet<i32>, Error> {
-    numbers.split_whitespace()
+    numbers
+        .split_whitespace()
         .map(|s| s.parse::<i32>())
         .collect::<Result<HashSet<i32>, _>>()
         .map_err(|e| anyhow!("Error parsing numbers: {}", e))

@@ -2,37 +2,18 @@ use aoc_23::*;
 
 use anyhow::{Error, Result};
 
-const CURRENT_DAY: Day = Day::Day00;
-const PUZZLE_INPUT: &str = include_str!("../../puzzle_input/day_00.txt");
+const CURRENT_DAY: Day = Day::Day05;
+const PUZZLE_INPUT: &str = include_str!("../../puzzle_input/day_05.txt");
 
 fn solve_part_1(input: &str) -> Result<String, Error> {
-    let (
-        seeds,
-        seed_to_soil,
-        soil_to_fertilizer,
-        fertilizer_to_water,
-        water_to_light,
-        light_to_temperature,
-        temperature_to_humidity,
-        humidity_to_location
-    ) = map_seeds_to_location(input);
-    
-    let almanac_maps = [
-        &seed_to_soil,
-        &soil_to_fertilizer,
-        &fertilizer_to_water,
-        &water_to_light,
-        &light_to_temperature,
-        &temperature_to_humidity,
-        &humidity_to_location
-    ];
+    let almanac = Almanac::new(input);
 
-    let mut locations = vec![0; seeds.len()];
-
-
-    for each_map in almanac_maps {
-        locations = convert_map(each_map, &seeds)
-    }
+    let locations = almanac
+        .maps
+        .iter()
+        .fold(almanac.seeds, |new_seeds, each_map| {
+            convert(each_map, &new_seeds)
+        });
 
     let lowest_location = locations.into_iter().min().unwrap();
 
@@ -43,74 +24,80 @@ fn solve_part_2(input: &str) -> Result<String, Error> {
     good_luck!(input)
 }
 
-fn convert_map(map: &Vec<(i32, i32, i32)>, seeds: &Vec<i32>) -> Vec<i32> {
-    let mut new_map: Vec<i32> = vec![];
-
-    for seed in seeds {
-        let mut index = 0;
-
-        for line in map {
-            let (new_seed, found) = check_map_line(line, seed);
-            new_map[index] = new_seed;
-
-            if found { break }
-
-            index += 1;
-        }
-    }
-
-    new_map
+struct Almanac {
+    seeds: Vec<i64>,
+    maps: Vec<Vec<(i64, i64, i64)>>,
 }
 
-fn check_map_line(map_line: &(i32, i32, i32), seed: &i32) -> (i32, bool) {
-    let index = 0;
+impl Almanac {
+    fn new(input: &str) -> Self {
+        let seeds_section = input.lines().nth(0).unwrap();
+        let seeds = parse_seeds(seeds_section);
 
-    for i in (map_line.1)..(map_line.1 + map_line.2) {
-        if i == *seed {
-            return (map_line.0 + index, true);
-        }
+        let maps = parse_to_vec(input);
+
+        Self { seeds, maps }
     }
-
-    (*seed, false)
 }
 
-fn parse_to_vec(input: &str) -> Vec<(i32, i32, i32)> {
-    input
-        .lines()
-        .map(|line| {
-            let nums: Vec<i32> = line.split_whitespace()
-                                     .filter_map(|num| num.parse::<i32>().ok())
-                                     .collect();
-            (nums[0], nums[1], nums[2])
+fn convert(each_map: &[(i64, i64, i64)], seeds: &[i64]) -> Vec<i64> {
+    seeds
+        .iter()
+        .map(|&seed| {
+            each_map
+                .iter()
+                .find_map(|&(dest_start, src_start, length)| {
+                    check_map_line(dest_start, src_start, length, seed)
+                })
+                .unwrap_or(seed)
         })
         .collect()
 }
 
-fn parse_seeds(input: &str) -> Vec<i32> {
-    input.split_whitespace()
-         .filter_map(|num| num.parse::<i32>().ok())
-         .collect()
+fn check_map_line(dest_start: i64, src_start: i64, length: i64, seed: i64) -> Option<i64> {
+    if seed >= src_start && seed < src_start + length {
+        Some(dest_start + (seed - src_start))
+    } else {
+        None
+    }
 }
 
-fn map_seeds_to_location(input: &str) -> (
-    Vec<i32>, Vec<(i32, i32, i32)>, Vec<(i32, i32, i32)>, Vec<(i32, i32, i32)>,
-    Vec<(i32, i32, i32)>, Vec<(i32, i32, i32)>, Vec<(i32, i32, i32)>, Vec<(i32, i32, i32)>
-) {
-    let mut sections = input.split("\n\n");
-    let seeds_section = sections.next().unwrap_or("");
-    let seed_vec = parse_seeds(seeds_section.lines().nth(1).unwrap_or_default());
-    
-    let maps: Vec<Vec<(i32, i32, i32)>> = sections.map(parse_to_vec).collect();
-    (
-        seed_vec,
-        maps.get(0).cloned().unwrap_or_default(),
-        maps.get(1).cloned().unwrap_or_default(),
-        maps.get(2).cloned().unwrap_or_default(),
-        maps.get(3).cloned().unwrap_or_default(),
-        maps.get(4).cloned().unwrap_or_default(),
-        maps.get(5).cloned().unwrap_or_default(),
-        maps.get(6).cloned().unwrap_or_default(),
-    )
+fn parse_to_vec(input: &str) -> Vec<Vec<(i64, i64, i64)>> {
+    let mut sections = Vec::new();
+    let mut current_section = Vec::new();
+
+    for line in input.lines() {
+        if line.contains(':') {
+            if !current_section.is_empty() {
+                sections.push(current_section);
+                current_section = Vec::new();
+            }
+        } else {
+            let nums: Vec<i64> = line
+                .split_whitespace()
+                .filter_map(|num| num.parse::<i64>().ok())
+                .collect();
+            if nums.len() == 3 {
+                current_section.push((nums[0], nums[1], nums[2]));
+            }
+        }
+    }
+
+    if !current_section.is_empty() {
+        sections.push(current_section);
+    }
+
+    sections
+}
+
+fn parse_seeds(input: &str) -> Vec<i64> {
+    input
+        .split(':')
+        .last()
+        .unwrap()
+        .split_whitespace()
+        .map(|num| num.parse::<i64>().unwrap())
+        .collect()
 }
 
 fn main() -> Result<(), Error> {

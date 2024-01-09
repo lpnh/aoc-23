@@ -10,31 +10,33 @@ use std::collections::HashSet;
 fn solve_part_1(input: &str) -> Result<String, Error> {
     let maps = get_maps(input);
     let mut seeds = get_seed_ranges(input, Part::One);
-    
+
     for each_map in maps {
         seeds = mapping_seeds(&each_map, &seeds)
     }
 
-    let min_min = seeds.iter()
-                    .min_by_key(|seed| seed.min)
-                    .map(|seed| seed.min)
-                    .unwrap();
+    let min_min = seeds
+        .iter()
+        .min_by_key(|seed| seed.min)
+        .map(|seed| seed.min)
+        .unwrap();
 
     Ok(min_min.to_string())
 }
 
-pub fn solve_part_2(input: &str) -> Result<String, Error> {  
+pub fn solve_part_2(input: &str) -> Result<String, Error> {
     let maps = get_maps(input);
     let mut seeds = get_seed_ranges(input, Part::Two);
-    
+
     for each_map in maps {
         seeds = mapping_seeds(&each_map, &seeds)
     }
 
-    let min_min = seeds.iter()
-                    .min_by_key(|seed| seed.min)
-                    .map(|seed| seed.min)
-                    .unwrap();
+    let min_min = seeds
+        .iter()
+        .min_by_key(|seed| seed.min)
+        .map(|seed| seed.min)
+        .unwrap();
 
     Ok(min_min.to_string())
 }
@@ -52,11 +54,11 @@ pub fn mapping_seeds(map: &[MapLine], seeds: &[SeedRange]) -> Vec<SeedRange> {
 
         for map_line in map {
             let result = SeedAfterEachLine::new(map_line, seed_range);
-            
+
             if let Some(val) = result.transformed_seed {
                 new_seeds.insert(val);
             }
-            
+
             if let Some(val) = result.not_transformed_seed {
                 new_seeds.insert(val);
             }
@@ -82,19 +84,11 @@ pub struct SeedRange {
 
 impl SeedRange {
     fn from_tuple(min: usize, max: usize) -> Self {
-        Self {
-            min,
-            max
-        }
+        Self { min, max }
     }
 
     fn from_tuple_into_option(min: usize, max: usize) -> Option<Self> {
-        Some(
-            Self {
-                min,
-                max
-            }
-        )
+        Some(Self { min, max })
     }
 }
 
@@ -103,7 +97,7 @@ pub struct MapLine {
     dest_start: usize,
     source_start: usize,
     source_end: usize,
-    range_length: usize
+    range_length: usize,
 }
 
 impl MapLine {
@@ -138,42 +132,41 @@ impl SeedAfterEachLine {
         let state = Self::check_state(map_line, seed_range);
 
         match state {
-            SeedMapState::OutsideMappingRange => 
-                Self {
-                    found: false,
-                    transformed_seed: None,
-                    not_transformed_seed: None,
-                }
-            ,
-            SeedMapState::EntirelyInsideMappingRange => 
-                Self {
-                    found: true,
-                    transformed_seed: SeedRange::from_tuple_into_option(
-                        seed_range.min + map_line.dest_start - map_line.source_start,
-                        seed_range.max + map_line.dest_start - map_line.source_start
-                    ),
-                    not_transformed_seed: None,
-                }
-            ,
-            SeedMapState::PartiallyInsideMappingStart => 
-                Self {
-                    found: true,
-                    transformed_seed: SeedRange::from_tuple_into_option(
-                        map_line.dest_start,
-                        seed_range.max + map_line.dest_start - map_line.source_start
-                    ),
-                    not_transformed_seed: SeedRange::from_tuple_into_option(seed_range.min, map_line.source_start - 1),
-                }
-            ,
-            SeedMapState::PartiallyInsideMappingEnd => 
-                Self {
-                    found: true,
-                    transformed_seed: SeedRange::from_tuple_into_option(
-                        seed_range.min + map_line.dest_start - map_line.source_start,
-                        map_line.dest_start + map_line.range_length -1
-                    ),
-                    not_transformed_seed: SeedRange::from_tuple_into_option(map_line.source_end, seed_range.max),
-                }
+            SeedMapState::OutsideMappingRange => Self {
+                found: false,
+                transformed_seed: None,
+                not_transformed_seed: None,
+            },
+            SeedMapState::EntirelyInsideMappingRange => Self {
+                found: true,
+                transformed_seed: SeedRange::from_tuple_into_option(
+                    seed_range.min + map_line.dest_start - map_line.source_start,
+                    seed_range.max + map_line.dest_start - map_line.source_start,
+                ),
+                not_transformed_seed: None,
+            },
+            SeedMapState::PartiallyInsideMappingStart => Self {
+                found: true,
+                transformed_seed: SeedRange::from_tuple_into_option(
+                    map_line.dest_start,
+                    seed_range.max + map_line.dest_start - map_line.source_start,
+                ),
+                not_transformed_seed: SeedRange::from_tuple_into_option(
+                    seed_range.min,
+                    map_line.source_start - 1,
+                ),
+            },
+            SeedMapState::PartiallyInsideMappingEnd => Self {
+                found: true,
+                transformed_seed: SeedRange::from_tuple_into_option(
+                    seed_range.min + map_line.dest_start - map_line.source_start,
+                    map_line.dest_start + map_line.range_length - 1,
+                ),
+                not_transformed_seed: SeedRange::from_tuple_into_option(
+                    map_line.source_end,
+                    seed_range.max,
+                ),
+            },
         }
     }
 
@@ -198,19 +191,24 @@ fn get_maps(input: &str) -> Vec<Vec<MapLine>> {
         .filter_map(|section| {
             let mut tuples = Vec::new();
             for line in section.lines() {
-                let nums: Vec<usize> = line.split_whitespace()
-                                            .filter_map(|num| num.parse().ok())
-                                            .collect();
+                let nums: Vec<usize> = line
+                    .split_whitespace()
+                    .filter_map(|num| num.parse().ok())
+                    .collect();
                 if nums.len() == 3 {
                     tuples.push(MapLine::from_tuple(nums[0], nums[1], nums[2]));
                 }
             }
-            if tuples.is_empty() { None } else { Some(tuples) }
+            if tuples.is_empty() {
+                None
+            } else {
+                Some(tuples)
+            }
         })
         .collect()
 }
 
-fn get_seed_ranges(input: &str, part: Part) -> Vec<SeedRange> {   
+fn get_seed_ranges(input: &str, part: Part) -> Vec<SeedRange> {
     let values_from_str: Vec<usize> = input
         .lines()
         .next()
@@ -230,7 +228,7 @@ fn get_seed_ranges(input: &str, part: Part) -> Vec<SeedRange> {
         Part::Two => values_from_str
             .chunks_exact(2)
             .map(|chunk| SeedRange::from_tuple(chunk[0], chunk[0] + chunk[1]))
-            .collect::<Vec<SeedRange>>()
+            .collect::<Vec<SeedRange>>(),
     };
 
     ranges

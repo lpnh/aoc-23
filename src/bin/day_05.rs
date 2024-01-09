@@ -1,72 +1,42 @@
 use aoc_23::*;
 
-use anyhow::{anyhow, Error, Result};
-
-use std::ops::Range;
+use anyhow::{Error, Result};
 
 const CURRENT_DAY: Day = Day::Day05;
 const PUZZLE_INPUT: &str = include_str!("../../puzzle_input/day_05.txt");
 
+use std::collections::HashSet;
+
 fn solve_part_1(input: &str) -> Result<String, Error> {
-    let seeds_section = input.lines().next().ok_or(anyhow!("Invalid input: Missing seeds section"))?;
-    let seeds = parse_seeds(seeds_section, Part::One);
-    let mappings = Mappings::build_mappings(&seeds, &parse_mappings(input)?.iter().map(|m| m.as_slice()).collect::<Vec<_>>());
-
-    seeds.iter()
-        .filter_map(|&seed| mappings.find_lowest_location(seed))
-        .min()
-        .map(|min_location| min_location.to_string())
-        .ok_or_else(|| anyhow!("No minimum location found"))
-}
-
-pub fn solve_part_2(input: &str) -> Result<String, Error> {
-    let seeds_section = input.lines().next().ok_or(anyhow!("Invalid input: Missing seeds section"))?;
-    let seeds = parse_seeds(seeds_section, Part::Two);
-    let mappings = Mappings::build_mappings(&seeds, &parse_mappings(input)?.iter().map(|m| m.as_slice()).collect::<Vec<_>>());
-
-    seeds.iter()
-        .filter_map(|&seed| mappings.find_lowest_location(seed))
-        .min()
-        .map(|min_location| min_location.to_string())
-        .ok_or_else(|| anyhow!("No minimum location found"))
-}
-
-fn parse_seeds(input: &str, part: Part) -> Vec<usize> {
-    match part {
-        Part::One => parse_numbers(input),
-        Part::Two => parse_numbers(input)
-            .chunks_exact(2)
-            .flat_map(|chunk| chunk[0]..chunk[0] + chunk[1])
-            .collect(),
+    let maps = get_maps(input);
+    let mut seeds = get_seed_ranges(input, Part::One);
+    
+    for each_map in maps {
+        seeds = mapping_seeds(&each_map, &seeds)
     }
+
+    let min_min = seeds.iter()
+                    .min_by_key(|seed| seed.min)
+                    .map(|seed| seed.min)
+                    .unwrap();
+
+    Ok(min_min.to_string())
 }
 
-fn parse_mappings(input: &str) -> Result<Vec<Vec<(usize, usize, usize)>>> {
-    let maps = input
-        .split(':')
-        .filter_map(parse_tuples)
-        .collect::<Vec<_>>();
+pub fn solve_part_2(input: &str) -> Result<String, Error> {  
+    let maps = get_maps(input);
+    let mut seeds = get_seed_ranges(input, Part::Two);
+    
+    for each_map in maps {
+        seeds = mapping_seeds(&each_map, &seeds)
+    }
 
-    if maps.len() == 7 { Ok(maps) } else { Err(anyhow!("Incorrect number of maps provided")) }
-}
+    let min_min = seeds.iter()
+                    .min_by_key(|seed| seed.min)
+                    .map(|seed| seed.min)
+                    .unwrap();
 
-fn parse_tuples(section: &str) -> Option<Vec<(usize, usize, usize)>> {
-    let tuples: Vec<_> = section
-        .lines()
-        .filter_map(|line| {
-            let nums: Vec<usize> = line.split_whitespace().filter_map(|num| num.parse().ok()).collect();
-            if nums.len() == 3 {
-                Some((nums[0], nums[1], nums[2]))
-            } else {
-                None
-            }
-        })
-        .collect();
-    if tuples.is_empty() { None } else { Some(tuples) }
-}
-
-fn parse_numbers(input: &str) -> Vec<usize> {
-    input.split_whitespace().filter_map(|num| num.parse().ok()).collect()
+    Ok(min_min.to_string())
 }
 
 enum Part {
@@ -74,116 +44,196 @@ enum Part {
     Two,
 }
 
-struct Mappings {
-    segment_trees: Vec<SegmentTree<usize>>,
-}
+pub fn mapping_seeds(map: &[MapLine], seeds: &[SeedRange]) -> Vec<SeedRange> {
+    let mut new_seeds = HashSet::new();
 
-impl Mappings {
-    pub fn build_mappings(seeds: &[usize], maps: &[&[(usize, usize, usize)]]) -> Self {
-        assert_eq!(maps.len(), 7, "There must be exactly 7 maps");
-        
-        let segment_trees = maps.iter().map(|&map| {
-            SegmentTree::from_map(seeds, map)
-        }).collect::<Vec<_>>();
+    for seed_range in seeds {
+        let mut found = false;
 
-        Mappings { segment_trees }
-    }
+        for map_line in map {
+            let result = SeedAfterEachLine::new(map_line, seed_range);
+            
+            if let Some(val) = result.transformed_seed {
+                new_seeds.insert(val);
+            }
+            
+            if let Some(val) = result.not_transformed_seed {
+                new_seeds.insert(val);
+            }
 
-    pub fn find_lowest_location(&self, seed: usize) -> Option<usize> {
-        let mut current_value = seed;
-
-        for tree in &self.segment_trees {
-            current_value = tree.query(current_value..current_value + 1).unwrap_or(current_value);
-        }
-
-        Some(current_value)
-    }
-}
-
-pub struct SegmentTree<T: Default + Copy> {
-    len: usize,
-    tree: Vec<T>,
-    merge: fn(T, T) -> T,
-}
-
-impl<T: Default + Copy> SegmentTree<T> {
-    pub fn from_vec(arr: &[T], merge: fn(T, T) -> T) -> Self {
-        let len = arr.len();
-        let mut tree = SegmentTree {
-            len,
-            tree: vec![T::default(); 4 * len],
-            merge,
-        };
-        if !arr.is_empty() {
-            tree.build_recursive(arr, 1, 0..len);
-        }
-        tree
-    }
-
-    fn build_recursive(&mut self, arr: &[T], idx: usize, range: Range<usize>) {
-        if range.end - range.start == 1 {
-            self.tree[idx] = arr[range.start];
-        } else {
-            let mid = range.start + (range.end - range.start) / 2;
-            self.build_recursive(arr, 2 * idx, range.start..mid);
-            self.build_recursive(arr, 2 * idx + 1, mid..range.end);
-            self.tree[idx] = (self.merge)(self.tree[2 * idx], self.tree[2 * idx + 1]);
-        }
-    }
-
-    pub fn query(&self, range: Range<usize>) -> Option<T> {
-        self.query_recursive(1, 0..self.len, &range)
-    }
-
-    fn query_recursive(&self, idx: usize, element_range: Range<usize>, query_range: &Range<usize>) -> Option<T> {
-        if element_range.start >= query_range.end || element_range.end <= query_range.start {
-            return None;
-        }
-        if element_range.start >= query_range.start && element_range.end <= query_range.end {
-            return Some(self.tree[idx]);
-        }
-        let mid = element_range.start + (element_range.end - element_range.start) / 2;
-        let left = self.query_recursive(2 * idx, element_range.start..mid, query_range);
-        let right = self.query_recursive(2 * idx + 1, mid..element_range.end, query_range);
-        match (left, right) {
-            (None, None) => None,
-            (Some(l), None) | (None, Some(l)) => Some(l),
-            (Some(l), Some(r)) => Some((self.merge)(l, r)),
-        }
-    }
-
-    pub fn update(&mut self, idx: usize, val: T) {
-        if idx < self.len {
-            self.update_recursive(1, 0..self.len, idx, val);
-        }
-    }
-
-    fn update_recursive(&mut self, idx: usize, element_range: Range<usize>, target_idx: usize, val: T) {
-        if element_range.start > target_idx || element_range.end <= target_idx {
-            return;
-        }
-        if element_range.end - element_range.start == 1 && element_range.start == target_idx {
-            self.tree[idx] = val;
-            return;
-        }
-        let mid = element_range.start + (element_range.end - element_range.start) / 2;
-        self.update_recursive(2 * idx, element_range.start..mid, target_idx, val);
-        self.update_recursive(2 * idx + 1, mid..element_range.end, target_idx, val);
-        self.tree[idx] = (self.merge)(self.tree[2 * idx], self.tree[2 * idx + 1]);
-    }
-}
-
-impl SegmentTree<usize> {
-    pub fn from_map(seeds: &[usize], map: &[(usize, usize, usize)]) -> Self {
-        let merge_fn = std::cmp::min;
-        let mut tree = SegmentTree::from_vec(seeds, merge_fn);
-        for &(src_start, dest_start, length) in map {
-            for i in 0..length {
-                tree.update(src_start + i, dest_start + i);
+            if result.found {
+                found = true;
             }
         }
-        tree
+
+        if !found {
+            new_seeds.insert(*seed_range);
+        }
     }
+
+    new_seeds.into_iter().collect()
+}
+
+#[derive(Hash, Eq, PartialEq, Copy, Clone)]
+pub struct SeedRange {
+    min: usize,
+    max: usize,
+}
+
+impl SeedRange {
+    fn from_tuple(min: usize, max: usize) -> Self {
+        Self {
+            min,
+            max
+        }
+    }
+
+    fn from_tuple_into_option(min: usize, max: usize) -> Option<Self> {
+        Some(
+            Self {
+                min,
+                max
+            }
+        )
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct MapLine {
+    dest_start: usize,
+    source_start: usize,
+    source_end: usize,
+    range_length: usize
+}
+
+impl MapLine {
+    fn from_tuple(dest_start: usize, source_start: usize, range_length: usize) -> Self {
+        let source_end = source_start + range_length;
+
+        Self {
+            dest_start,
+            source_start,
+            source_end,
+            range_length,
+        }
+    }
+}
+
+pub struct SeedAfterEachLine {
+    found: bool,
+    transformed_seed: Option<SeedRange>,
+    not_transformed_seed: Option<SeedRange>,
+}
+
+#[derive(Debug)]
+enum SeedMapState {
+    OutsideMappingRange,
+    EntirelyInsideMappingRange,
+    PartiallyInsideMappingStart,
+    PartiallyInsideMappingEnd,
+}
+
+impl SeedAfterEachLine {
+    pub fn new(map_line: &MapLine, seed_range: &SeedRange) -> Self {
+        let state = Self::check_state(map_line, seed_range);
+
+        match state {
+            SeedMapState::OutsideMappingRange => 
+                Self {
+                    found: false,
+                    transformed_seed: None,
+                    not_transformed_seed: None,
+                }
+            ,
+            SeedMapState::EntirelyInsideMappingRange => 
+                Self {
+                    found: true,
+                    transformed_seed: SeedRange::from_tuple_into_option(
+                        seed_range.min + map_line.dest_start - map_line.source_start,
+                        seed_range.max + map_line.dest_start - map_line.source_start
+                    ),
+                    not_transformed_seed: None,
+                }
+            ,
+            SeedMapState::PartiallyInsideMappingStart => 
+                Self {
+                    found: true,
+                    transformed_seed: SeedRange::from_tuple_into_option(
+                        map_line.dest_start,
+                        seed_range.max + map_line.dest_start - map_line.source_start
+                    ),
+                    not_transformed_seed: SeedRange::from_tuple_into_option(seed_range.min, map_line.source_start - 1),
+                }
+            ,
+            SeedMapState::PartiallyInsideMappingEnd => 
+                Self {
+                    found: true,
+                    transformed_seed: SeedRange::from_tuple_into_option(
+                        seed_range.min + map_line.dest_start - map_line.source_start,
+                        map_line.dest_start + map_line.range_length -1
+                    ),
+                    not_transformed_seed: SeedRange::from_tuple_into_option(map_line.source_end, seed_range.max),
+                }
+        }
+    }
+
+    fn check_state(map_line: &MapLine, seed_range: &SeedRange) -> SeedMapState {
+        if seed_range.min >= map_line.source_start && seed_range.max < map_line.source_end {
+            SeedMapState::EntirelyInsideMappingRange
+        } else if seed_range.max > map_line.source_start && seed_range.max < map_line.source_end {
+            SeedMapState::PartiallyInsideMappingStart
+        } else if seed_range.min >= map_line.source_start && seed_range.min < map_line.source_end {
+            SeedMapState::PartiallyInsideMappingEnd
+        } else {
+            SeedMapState::OutsideMappingRange
+        }
+    }
+}
+
+// get_maps parses the input into a vector of maps, each map being a vector of tuples.
+// Each tuple represents a single mapping line with destination start, source start, and length.
+fn get_maps(input: &str) -> Vec<Vec<MapLine>> {
+    input
+        .split(':')
+        .filter_map(|section| {
+            let mut tuples = Vec::new();
+            for line in section.lines() {
+                let nums: Vec<usize> = line.split_whitespace()
+                                            .filter_map(|num| num.parse().ok())
+                                            .collect();
+                if nums.len() == 3 {
+                    tuples.push(MapLine::from_tuple(nums[0], nums[1], nums[2]));
+                }
+            }
+            if tuples.is_empty() { None } else { Some(tuples) }
+        })
+        .collect()
+}
+
+fn get_seed_ranges(input: &str, part: Part) -> Vec<SeedRange> {   
+    let values_from_str: Vec<usize> = input
+        .lines()
+        .next()
+        .map(|line| {
+            line.split_whitespace()
+                .filter_map(|word| word.parse::<usize>().ok())
+                .collect::<Vec<usize>>()
+        })
+        .unwrap();
+
+    let ranges = match part {
+        Part::One => values_from_str
+            .into_iter()
+            .map(|single_val| SeedRange::from_tuple(single_val, single_val))
+            .collect::<Vec<SeedRange>>(),
+
+        Part::Two => values_from_str
+            .chunks_exact(2)
+            .map(|chunk| SeedRange::from_tuple(chunk[0], chunk[0] + chunk[1]))
+            .collect::<Vec<SeedRange>>()
+    };
+
+    ranges
 }
 
 fn main() -> Result<(), Error> {
